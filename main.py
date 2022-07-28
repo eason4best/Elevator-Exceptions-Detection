@@ -3,17 +3,17 @@ from line_detector import LineDetector
 from line_tracker import LineTracker
 from line_counter import LineCounter
 from utils import Utils
+from grapher import Grapher
 
-video = cv2.VideoCapture('IS7(D).avi')
-vw = cv2.VideoWriter('result.avi', cv2.VideoWriter_fourcc('M','J','P','G'), 25, (1024, 1024))
+video = cv2.VideoCapture('/Users/mac/Desktop/01(D).avi') 
 detector = None
 tracker = None
 counter = None
 borderY = None
-while video.isOpened():
+counts, cumCounts, compensateCounts, cumCompensateCounts = (None, None, None, None)
+while True:
     ret, frame = video.read()
     if not ret:
-        print('Cant receive frame')
         break
     if borderY is None:
         borderY = int(round(0.35 * frame.shape[0]))
@@ -27,7 +27,7 @@ while video.isOpened():
         if counter is None:
             counter = LineCounter(len(lines), borderY, upward = False) 
         lines = tracker.track(lines)
-        counts = counter.count(lines) 
+        counts, cumCounts, compensateCounts, cumCompensateCounts = counter.count(lines) 
         #標示斜紋。
         for index, group in enumerate(lines):   
             for _, line in group.items():
@@ -40,10 +40,16 @@ while video.isOpened():
         #標示每條鋼纜斜紋數量。
         for index, c in enumerate(counts):
             cv2.putText(frame, str(c), (10 + 100 * index, frame.shape[0] - 40), cv2.FONT_HERSHEY_SIMPLEX, 1.0, Utils.groupColors()[index], 2)
-        vw.write(frame)
         cv2.imshow("Frame", frame)
     if cv2.waitKey(1) == ord('q'):
         break 
-cv2.destroyAllWindows()
 video.release()
-vw.release()
+grapher = Grapher()
+grapher.countsTable(counts, compensateCounts, cumCounts, cumCompensateCounts)
+cv2.destroyAllWindows()
+
+
+
+
+
+

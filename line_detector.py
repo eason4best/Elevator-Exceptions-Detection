@@ -268,8 +268,8 @@ class LineDetector:
                             endPoint = (int(round(center[0] + (MALength / 2) * np.cos(np.radians(newAngle + 180)))), int(round(center[1] + (MALength / 2) * np.sin(np.radians(newAngle + 180)))))
                             majorAxe = {'startPoint': startPoint, 'endPoint': endPoint}
                             ellipse = (center, (maLength, MALength), 90 - angle)
-                            newEllipses.append({'ellipse': ellipse, 'majorAxe': majorAxe, 'compensate': True})
-                            newLines.append((startPoint, endPoint))
+                            newEllipses.append({'ellipse': ellipse, 'majorAxe': majorAxe})
+                            newLines.append((startPoint, endPoint, True))
                             newSlopes.append(slope)
                             newAngles.append(angle)
                     if index2 == len(group[first:-1]) - 1:
