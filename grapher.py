@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from labellines import labelLines
 from utils import Utils
 
 class Grapher:
@@ -13,8 +14,9 @@ class Grapher:
         for i, c in enumerate(cumCounts):
             color = tuple(reversed(Utils.groupColors()[i]))
             color = tuple(c / 255 for c in color)
-            axs[0].plot(frames, c, label = '鋼纜{}'.format(i + 1), color = color)
-        axs[0].legend(loc = 4, prop={'size': 20})
+            axs[0].plot(frames, c, label = i + 1, color = color)
+        #axs[0].legend(loc = 4, prop={'size': 20})
+        labelLines(axs[0].get_lines(), align = False, fontSize = 36)
         axs[0].set_title('斜紋總數', fontsize = 40)
         axs[0].set_ylabel('個數', fontsize = 36, rotation = 0, labelpad = 40)
         axs[0].yaxis.set_major_locator(plt.MaxNLocator(integer = True))
@@ -23,8 +25,9 @@ class Grapher:
         for i, c in enumerate(cumCompensateCounts):
             color = tuple(reversed(Utils.groupColors()[i]))
             color = tuple(c / 255 for c in color)
-            axs[1].plot(frames, c, label = '鋼纜{}'.format(i + 1), color = color)
-        axs[1].legend(loc = 4, prop={'size': 20})
+            axs[1].plot(frames, c, label = i + 1, color = color)
+        #axs[1].legend(loc = 4, prop={'size': 20})
+        labelLines(axs[1].get_lines(), align = False, fontSize = 36)
         axs[1].set_title('斜紋補償數', fontsize = 40)
         axs[1].set_xlabel('時間', fontsize = 36)
         axs[1].set_ylabel('個數', fontsize = 36, rotation = 0, labelpad = 40)
