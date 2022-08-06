@@ -2,19 +2,21 @@ import cv2
 import numpy as np
 
 class LineDetector:
-    def __init__(self, borderY, upward = True):
+    def __init__(self, borderY = None, isVideo = True, upward = True):
         #界線的位置。
         self._borderY = borderY
+        #是否在偵測影片中的Frame，還是單純偵測一張圖片。
+        self._isVideo = isVideo
         #鋼纜移動方向。
         self._upward = upward
         #用來儲存每條鋼纜上所有斜紋的平均中心點X座標。
         self._groupMeanCenterXs = []
     
-    #偵測傳入的原始圖片[img]的斜紋。
-    def detect(self, img):
-        self._img = img
+    #偵測傳入的原始影像[frame]的斜紋。
+    def detect(self, frame):
+        self._frame = frame
         #將原始圖片進行預處理。
-        preprocessImg = self._preprocess(self._img)
+        preprocessImg = self._preprocess(self._frame)
         #使用Canny邊緣檢測找出斜紋的邊緣。
         canny = cv2.Canny(preprocessImg, 100, 100, apertureSize = 3)
         #找出圖片中的輪廓並對每一個輪廓都適配（Fit）一個橢圓。 
@@ -52,16 +54,17 @@ class LineDetector:
                 self._angles[i] = [x[3] for x in sortResult]
         #將代表同一個斜紋的破碎橢圓接在一起。
         groupedFittedEllipses = self._combineSmallEllipses(groupedFittedEllipses)
-        #平移所有橢圓，使同組的橢圓有相同的中心點X座標（這樣計數器在判別斜紋時會更精確）。
-        groupedFittedEllipses = self._translateEllipses(groupedFittedEllipses)
-        #補齊因光線、陰影等外部條件而沒有被辨識到的斜紋。只有界線之前的斜紋才需要補，因為過了界線有沒有補都不影響計數。
-        groupedFittedEllipses = self._compensate(groupedFittedEllipses)
+        if self._isVideo:
+            #平移所有橢圓，使同組的橢圓有相同的中心點X座標（這樣計數器在判別斜紋時會更精確）。
+            groupedFittedEllipses = self._translateEllipses(groupedFittedEllipses)
+            #補齊因光線、陰影等外部條件而沒有被辨識到的斜紋。只有界線之前的斜紋才需要補，因為過了界線有沒有補都不影響計數。
+            groupedFittedEllipses = self._compensate(groupedFittedEllipses)
         return (self._lines, self._slopes, self._angles)
     
-    #將原始圖片[img]進行預處理。
-    def _preprocess(self, img):
+    #將原始影像[frame]進行預處理。
+    def _preprocess(self, frame):
         #將原始圖片轉為灰階，以進行後續處理。
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         #使用高斯模糊消除圖片中的雜訊，避免其干擾後續辨識。
         blur = cv2.GaussianBlur(gray, (5,5), 0)
         #將圖片進行二值化，突顯出要辨識的斜紋。
@@ -71,10 +74,10 @@ class LineDetector:
         morph = cv2.morphologyEx(threshold, cv2.MORPH_OPEN, kernel)
         return morph
     
-    #找出圖片[img]中的輪廓並對每一個輪廓都適配（Fit）一個橢圓。
-    def _findContourAndFitEllipse(self, img):
+    #找出影像[frame]中的輪廓並對每一個輪廓都適配（Fit）一個橢圓。
+    def _findContourAndFitEllipse(self, frame):
         #找出圖片中的輪廓。 
-        contours = cv2.findContours(img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         contours = contours[0] if len(contours) == 2 else contours[1]
         #存放適配輪廓的橢圓及其他相關資訊。
         fittedEllipse = []
@@ -415,11 +418,11 @@ class LineDetector:
             majorAxe = {'startPoint': e2['majorAxe']['startPoint'], 'endPoint': e1['majorAxe']['endPoint']}
         return ({'ellipse': (center, (maLength, MALength), 90 - angle), 'majorAxe': majorAxe}, (majorAxe['startPoint'], majorAxe['endPoint']), slope, angle)
     
-    #計算將圖片上的一點[point]以圖片中心為錨點旋轉[angle]角度後的新座標。
+    #計算將圖片上的一點[point]以影像中心為錨點旋轉[angle]角度後的新座標。
     def _rotatePointAroundImageCenter(self, point, angle):
         originalX, originalY = point
-        imageCenterX = int(round(self._img.shape[1] / 2))
-        imageCenterY = int(round(self._img.shape[0] / 2))
+        imageCenterX = int(round(self._frame.shape[1] / 2))
+        imageCenterY = int(round(self._frame.shape[0] / 2))
         originalX -= imageCenterX
         originalY -= imageCenterY
         angle = angle * np.pi / 180
