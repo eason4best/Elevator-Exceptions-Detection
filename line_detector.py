@@ -325,7 +325,7 @@ class LineDetector:
             upperGroupGaps = medianGroupGaps + 30.0 * scalingFactorGroupGaps
             try:
                 #找出要從第幾個橢圓開始補斜紋。鋼纜為上行時，則從界線上方100像素開始往下補。鋼纜為下行時，則從界線下方100像素開始往上補。
-                first = next(i for i, e in enumerate(group) if e['ellipse'][0][1] > (self._borderY - 100)) if self._upward else next(i for i, e in enumerate(group) if e['ellipse'][0][1] < (self._borderY + 100))
+                first = 0 if self._borderY is None else next(i for i, e in enumerate(group) if e['ellipse'][0][1] > (self._borderY - 100)) if self._upward else next(i for i, e in enumerate(group) if e['ellipse'][0][1] < (self._borderY + 100))
                 newEllipses = group[:first]
                 newLines = self._lines[index1][:first]
                 newSlopes = self._slopes[index1][:first]

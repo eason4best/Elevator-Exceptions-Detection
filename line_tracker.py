@@ -4,7 +4,7 @@ import numpy as np
 from utils import Utils
 
 class LineTracker:
-    def __init__(self, nGroup, borderY, upward = True, maxDisappear = 5):
+    def __init__(self, nGroup, borderY = None, upward = True, maxDisappear = 5):
         #鋼纜數量。
         self._nGroup = nGroup
         #界線的位置。
@@ -42,17 +42,25 @@ class LineTracker:
                         self._deregister(index ,lineId)
             return self._groupedLines
         #初始情況，替第一幀中所有斜紋註冊。
-        if sum([len(lines) for lines in self._groupedLines]) == 0:
+        if sum([len(group) for group in self._groupedLines]) == 0:
             for index, lines in enumerate(groupedLines):
-                for i in range(0, len(lines)):
-                    if (self._upward and Utils.getLineCentroid(lines[i])[1] > self._borderY) or (not self._upward and Utils.getLineCentroid(lines[i])[1] < self._borderY):
+                if self._borderY is None:
+                    for i in range(0, len(lines)):
                         self._register(index, lines[i])
+                else:
+                    for i in range(0, len(lines)):
+                        if (self._upward and Utils.getLineCentroid(lines[i])[1] > self._borderY) or (not self._upward and Utils.getLineCentroid(lines[i])[1] < self._borderY):
+                            self._register(index, lines[i])
         #若有組在第一幀中沒有任何斜紋被註冊，則在此先註冊。
         for index, lines in enumerate(self._groupedLines):
             if len(lines) == 0:
-                for l in groupedLines[index]:
-                    if (self._upward and Utils.getLineCentroid(l)[1] > self._borderY) or (not self._upward and Utils.getLineCentroid(l)[1] < self._borderY):
+                if self._borderY is None:
+                    for l in groupedLines[index]:
                         self._register(index, l)
+                else:
+                    for l in groupedLines[index]:
+                        if (self._upward and Utils.getLineCentroid(l)[1] > self._borderY) or (not self._upward and Utils.getLineCentroid(l)[1] < self._borderY):
+                            self._register(index, l)
         #透過目前已被追蹤的舊斜紋與這一幀辨識到的新斜紋，其中心點之間的距離來判斷新斜紋是來自哪一條舊斜紋。
         for index, lines in enumerate(self._groupedLines):
             #新斜紋的Id。
@@ -89,8 +97,11 @@ class LineTracker:
                 if self._groupedDisappears[index][lineId] > self._maxDisappear:
                     self._deregister(index, lineId)
             #尚未處理到的新斜紋（沒有舊斜紋與其對應）。
-            for col in unusedCols:
-                #如果該斜紋位於界線以前，則追蹤它。
-                if (self._upward and Utils.getLineCentroid(groupedLines[index][col])[1] > self._borderY) or (not self._upward and Utils.getLineCentroid(groupedLines[index][col])[1] < self._borderY): 
+            if self._borderY is None:
+                for col in unusedCols:
                     self._register(index, groupedLines[index][col])
+            else:
+                for col in unusedCols:
+                    if (self._upward and Utils.getLineCentroid(groupedLines[index][col])[1] > self._borderY) or (not self._upward and Utils.getLineCentroid(groupedLines[index][col])[1] < self._borderY): 
+                        self._register(index, groupedLines[index][col])
         return self._groupedLines
